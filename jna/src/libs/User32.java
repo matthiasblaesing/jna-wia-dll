@@ -1,5 +1,8 @@
 package libs;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.sun.jna.Library;
 import com.sun.jna.Structure;
 
@@ -28,6 +31,10 @@ public interface User32 extends Library {
 	public static class POINT extends Structure {
 		public int x;
 		public int y;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("x", "y");
+		}
 	}
 
 		public static class MSG extends Structure {
@@ -37,6 +44,10 @@ public interface User32 extends Library {
 			public int lParm;
 			int time;
 			POINT pt;
+			@Override
+			protected List<String> getFieldOrder() {
+				return Arrays.asList("hwnd", "message","wParm","lParm");
+			}
 		}
 
 	//http://msdn.microsoft.com/en-us/library/ms644936(VS.85).aspx

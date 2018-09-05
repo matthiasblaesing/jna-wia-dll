@@ -10,7 +10,7 @@ public class DeviceSerialNumber {
 		Kernel32 kernel32 = (Kernel32) 
 				Native.loadLibrary("kernel32", Kernel32.class);
 		String device = "\\\\.\\C:";
-		int hdl2 = kernel32.get  CreateFileA(
+		int hdl2 = kernel32.CreateFileA(
 				device, 
 				0x10000000, // GENERIC_ALL
 				3, // sharing - read, write 

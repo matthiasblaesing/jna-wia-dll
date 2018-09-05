@@ -1,5 +1,8 @@
 package libs;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.sun.jna.Library;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
@@ -49,6 +52,10 @@ public interface Kernel32 extends Library {
 		public short wMinute;
 		public short wSecond;
 		public short wMilliseconds;
+		@Override
+		protected List<String> getFieldOrder() {
+			return  null;
+		}
 	}
 
 	void GetSystemTime(SYSTEMTIME st);
@@ -58,6 +65,10 @@ public interface Kernel32 extends Library {
 	public static class FILETIME extends Structure {
 		public int dwLowDateTime;
 		public int dwHighDateTime;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("dwLowDateTime", "dwHighDateTime");
+		}
 	}
 	
 	boolean GetProcessTimes(int processHdl, FILETIME creation, FILETIME exit, FILETIME kernel, FILETIME user);
@@ -67,6 +78,10 @@ public interface Kernel32 extends Library {
 		int nLength;
 		Pointer lpSecurityDescriptor;
 		boolean bInheritHandle;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("nLength", "lpSecurityDescriptor","bInheritHandle");
+		}
 	}
 
 	int CreateFileA(String file, int access, int mode, SECURITY_ATTRIBUTES secAttrs,
@@ -81,6 +96,10 @@ public interface Kernel32 extends Library {
 		int OffsetHigh;
 		// union member PVOID Pointer;
 		int hEvent;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("Internal", "InternalHigh","Offset","OffsetHigh","hEvent");
+		}
 	}
 	
 	//http://msdn.microsoft.com/en-us/library/aa363411(VS.85).aspx
@@ -95,6 +114,10 @@ public interface Kernel32 extends Library {
 		public byte Reserved1;
 		public int BatteryLifeTime;
 		public int BatteryFullLifeTime;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("ACLineStatus", "BatteryFlag","BatteryLifePercent","Reserved1","BatteryLifeTime","BatteryFullLifeTime");
+		}
 	}
 	boolean GetSystemPowerStatus(SYSTEM_POWER_STATUS sps);
 

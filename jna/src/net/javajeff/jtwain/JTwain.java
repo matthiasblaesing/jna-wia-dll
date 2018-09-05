@@ -4,10 +4,15 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.image.MemoryImageSource;
 
+import com.sun.jna.Native;
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+import com.sun.jna.ptr.IntByReference;
+
 import libs.Kernel32;
 import libs.User32;
-import libs.Win32Twain;
 import libs.User32.MSG;
+import libs.Win32Twain;
 import libs.Win32Twain.BITMAPINFOHEADER;
 import libs.Win32Twain.TW_EVENT;
 import libs.Win32Twain.TW_IDENTITY;
@@ -16,17 +21,21 @@ import libs.Win32Twain.TW_PENDINGXFERS;
 import libs.Win32Twain.TW_STATUS;
 import libs.Win32Twain.TW_USERINTERFACE;
 
-import com.sun.jna.Native;
-import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
-import com.sun.jna.ptr.IntByReference;
-
 public class JTwain {
 
-	public static boolean init() {
+	public static boolean init(boolean loadDSM) {
 		kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
 		user32 = (User32) Native.loadLibrary("user32", User32.class);
-		twain = (Win32Twain) Native.loadLibrary("Twain_32", Win32Twain.class);
+		if(loadDSM){
+			twain = (Win32Twain)Native.loadLibrary("TWAINDSM", Win32Twain.class);
+		}else{
+			if (System.getProperty("sun.arch.data.model").indexOf("64") != -1) {
+				twain = (Win32Twain)  Native.loadLibrary("TWAINDSM", Win32Twain.class);
+			}else{
+				twain = (Win32Twain) Native.loadLibrary("Twain_32", Win32Twain.class);
+			}
+		}
+		
 		return true;
 	}
 

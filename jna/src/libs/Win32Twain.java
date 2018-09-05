@@ -1,4 +1,7 @@
 package libs;
+import java.util.Arrays;
+import java.util.List;
+
 import com.sun.jna.Library;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
@@ -13,6 +16,10 @@ public interface Win32Twain extends Library {
 	public static class TW_STATUS extends Structure {
 		public short ConditionCode;
 		public short Reserved;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("ConditionCode", "Reserved");
+		}
 	}
 
 /*typedef char    TW_STR32[34],     FAR *pTW_STR32;*/
@@ -53,6 +60,11 @@ public interface Win32Twain extends Library {
 				sb.append((char)Info[i]);
 			}
 			return sb.toString();
+		}
+		@Override
+		protected List<String> getFieldOrder() {
+		
+			return Arrays.asList("MajorNum", "MinorNum","Language","Country","Info");
 		}
 	}
 
@@ -129,6 +141,10 @@ public interface Win32Twain extends Library {
 			}
 			return sb.toString();
 		}
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("Id", "Version","ProtocolMajor","ProtocolMinor","SupportedGroups","Manufacturer","ProductFamily","ProductName");
+		}
 	}
 
 /*typedef struct {
@@ -139,6 +155,10 @@ public interface Win32Twain extends Library {
 	public static class TW_FIX32 extends Structure {
 		public short Whole;
 		public short Frac;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("Whole", "Frac");
+		}
 	}
 
 /*typedef struct {
@@ -165,6 +185,10 @@ public interface Win32Twain extends Library {
 		public boolean Planar;
 		public short PixelType;
 		public short Compression;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("XResolution", "YResolution","ImageWidth","ImageLength","SamplesPerPixel","BitsPerSample","BitsPerPixel","Planar","PixelType","Compression");
+		}
 	}
 	
 /*typedef struct tagRGBQUAD {
@@ -182,6 +206,10 @@ public interface Win32Twain extends Library {
 		public byte rgbGreen;
 		public byte rgbRed;
 		public byte rgbReserved;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("rgbBlue", "rgbGreen","rgbRed","rgbReserved");
+		}
 	}
 	
 /*typedef struct {
@@ -194,6 +222,10 @@ public interface Win32Twain extends Library {
 		public boolean ShowUI;
 		public boolean ModalUI;
 		public int hParent;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("ShowUI", "ModalUI","hParent");
+		}
 	}
 
 /*typedef struct {
@@ -207,6 +239,10 @@ public interface Win32Twain extends Library {
 	public static class TW_PENDINGXFERS extends Structure {
 		public int EOJ;
 		public int Reserved;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("EOJ", "Reserved");
+		}
 	}
 
 /*typedef struct {
@@ -217,6 +253,10 @@ public interface Win32Twain extends Library {
 	public static class TW_EVENT extends Structure {
 		public Pointer pEvent;
 		public short TWMessage;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("pEvent", "TWMessage");
+		}
 	}
 
 /*	public static class POINT extends Structure {
@@ -277,7 +317,11 @@ public interface Win32Twain extends Library {
 		public int biXPelsPerMeter; 
 		public int biYPelsPerMeter; 
 		public int biClrUsed; 
-		public int biClrImportant; 
+		public int biClrImportant;
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("biSize", "biWidth","biHeight","biPlanes","biBitCount","biCompression","biSizeImage","biXPelsPerMeter","biYPelsPerMeter","biClrUsed","biClrImportant");
+		} 
 	}
 
 	public short DSM_Entry(TW_IDENTITY origin, TW_IDENTITY destination, int dg, short dat, short msg, Object p);

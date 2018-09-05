@@ -1,10 +1,18 @@
 // JTwainDemo.java
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-import net.javajeff.jtwain.*;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+
+import net.javajeff.jtwain.JTwain;
+import net.javajeff.jtwain.JTwainException;
 
 /**
  *  This class defines the GUI for the JTwainDemo application.
@@ -55,7 +63,8 @@ public class JTwainDemo extends JFrame
       JMenuItem mi = new JMenuItem ("Acquire...");
       al = new ActionListener ()
            {
-               public void actionPerformed (ActionEvent e)
+               @Override
+			public void actionPerformed (ActionEvent e)
                {
                   try
                   {
@@ -95,7 +104,8 @@ public class JTwainDemo extends JFrame
       mi = new JMenuItem ("Select Source...");
       al = new ActionListener ()
            {
-               public void actionPerformed (ActionEvent e)
+               @Override
+			public void actionPerformed (ActionEvent e)
                {
                   try
                   {
@@ -124,7 +134,8 @@ public class JTwainDemo extends JFrame
       mi = new JMenuItem ("Exit");
       mi.addActionListener (new ActionListener ()
                             {
-                                public void actionPerformed (ActionEvent e)
+                                @Override
+								public void actionPerformed (ActionEvent e)
                                 {
                                    dispose ();
                                 }
@@ -141,7 +152,8 @@ public class JTwainDemo extends JFrame
       // Place the ImageArea panel component inside a JScrollPane and add the
       // JScrollPane to the main window's content pane.
 
-      getContentPane ().add (jsp = new JScrollPane (ia));
+      jsp = new JScrollPane (ia);
+	getContentPane ().add (jsp);
 
       // Pack all components to their preferred sizes.
 
@@ -162,7 +174,7 @@ public class JTwainDemo extends JFrame
    {
       // Initialize JTwain.
      
-      if (!JTwain.init ())
+      if (!JTwain.init (true))
       {
           System.out.println ("JTwainDemo: TWAIN not supported");
           return;
