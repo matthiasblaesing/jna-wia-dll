@@ -12,6 +12,7 @@ public interface User32 extends Library {
 
 	boolean LockWorkStation();
 	int GetDesktopWindow();
+	int GetForegroundWindow();
 	int CreateWindowExA(int styleEx, String className, String windowName, int style, 
 			int x, int y, int width, int height, int hndParent, int hndMenu, 
 			int hndInst, Object parm);

@@ -21,7 +21,7 @@ import libs.Win32Twain.TW_PENDINGXFERS;
 import libs.Win32Twain.TW_STATUS;
 import libs.Win32Twain.TW_USERINTERFACE;
 
-public class JTwain {
+public class JNATwain {
 
 	public static boolean init(boolean loadDSM) {
 		kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
@@ -40,14 +40,14 @@ public class JTwain {
 	}
 
 	public static Image acquire() throws JTwainException {
-		int hwnd = user32.CreateWindowExA(0, "STATIC", "",
+		int hwnd = user32.CreateWindowExA(0, "STATIC", "Twain dataSource",
 				WS_POPUPWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-				CW_USEDEFAULT, HWND_DESKTOP, 0, 0/*Win32TwainLibrary.HMODULE*/, null);
+				CW_USEDEFAULT, user32.GetForegroundWindow(), 0, 0/*Win32TwainLibrary.HMODULE*/, null);
 		//System.out.printf("CreateWindow: %d%n", hwnd);
 		if (hwnd == 0) {
 			throw new JTwainException("Unable to create private window");
 		}
-		boolean ok = user32.SetWindowPos(hwnd, HWND_TOPMOST, 0,
+		boolean ok = user32.SetWindowPos(hwnd, HWND_TOP, 0,
 				0, 0, 0, (short) SWP_NOSIZE);
 		if (!ok) {
 			user32.DestroyWindow(hwnd);
@@ -151,15 +151,15 @@ public class JTwain {
 		return image;
 	}
 
-	public static void selectSourceAsDefault() throws JTwainException {
+	public static int selectSourceAsDefault() throws JTwainException {
 		int hwnd = user32.CreateWindowExA(0, "STATIC", "",
 				WS_POPUPWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-				CW_USEDEFAULT, HWND_DESKTOP, 0, 0/*Win32TwainLibrary.HMODULE*/, null);
+				CW_USEDEFAULT, user32.GetForegroundWindow(), 0, 0/*Win32TwainLibrary.HMODULE*/, null);
 		//System.out.printf("CreateWindow: %d%n", hwnd);
 		if (hwnd == 0) {
 			throw new JTwainException("Unable to create private window (select)");
 		}
-		boolean ok = user32.SetWindowPos(hwnd, HWND_TOPMOST, 0,
+		boolean ok = user32.SetWindowPos(hwnd, HWND_TOP, 0,
 				0, 0, 0, (short) SWP_NOSIZE);
 		if (!ok) {
 			user32.DestroyWindow(hwnd);
@@ -180,10 +180,12 @@ public class JTwain {
 			CloseDSM(g_AppID, hwnd);
 			user32.DestroyWindow(hwnd);
 			if (stat == TWRC_CANCEL)
-				return;
+				return stat;
 			stat = GetConditionCode(g_AppID, srcID);
 			throw new JTwainException("Unable to display user interface: " + stat);
 		}
+		
+		
 		dump(srcID);
 		System.out.printf("ProtocolMajor: %02x%n", srcID.ProtocolMajor);
 		System.out.printf("ProtocolMinor: %02x%n", srcID.ProtocolMinor);
@@ -202,6 +204,7 @@ public class JTwain {
 		if (stat == 0) {
 			throw new JTwainException("Unable to destroy private window");
 		}
+		return stat;
 	}
 
 	private static Image xferDIB8toImage(BITMAPINFOHEADER bmih) {
@@ -463,10 +466,13 @@ public class JTwain {
 	@SuppressWarnings("unused")
 	private static final int TWRC_SUCCESS = 0, TWRC_FAILURE = 1, twrc_checkstatus = 2,
 		TWRC_CANCEL = 3, TWRC_NOTDSEVENT = 5, TWRC_XFERDONE = 6;
+	@SuppressWarnings("unused")
 	private static final int HWND_DESKTOP = 0x10014;
 	private static final int WS_POPUPWINDOW = 0x80000000 | 0x00800000 | 0x00080000;
 	private static final int CW_USEDEFAULT = 0x80000000;
+	@SuppressWarnings("unused")
 	private static final int HWND_TOPMOST = -1;
+	private static final int HWND_TOP = 0;
 	private static final int SWP_NOSIZE = 1;
 	private static TW_IDENTITY g_AppID = new TW_IDENTITY();
 }

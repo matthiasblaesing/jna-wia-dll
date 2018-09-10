@@ -11,7 +11,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 
-import net.javajeff.jtwain.JTwain;
+import net.javajeff.jtwain.JNATwain;
 import net.javajeff.jtwain.JTwainException;
 
 /**
@@ -73,7 +73,7 @@ public class JTwainDemo extends JFrame
                       // images are specified) if the dialog box's Scan button
                       // is clicked.
 
-                      Image im = JTwain.acquire ();
+                      Image im = JNATwain.acquire ();
 
                       // Return if the dialog box's Cancel button was clicked.
 
@@ -114,7 +114,7 @@ public class JTwainDemo extends JFrame
                       // long as the user closes the dialog box by clicking on
                       // Ok.
 
-                      JTwain.selectSourceAsDefault ();
+                      JNATwain.selectSourceAsDefault ();
                   }
                   catch (JTwainException e2)
                   {
@@ -174,7 +174,7 @@ public class JTwainDemo extends JFrame
    {
       // Initialize JTwain.
      
-      if (!JTwain.init (true))
+      if (!JNATwain.init (true))
       {
           System.out.println ("JTwainDemo: TWAIN not supported");
           return;
