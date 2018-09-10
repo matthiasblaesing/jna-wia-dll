@@ -54,7 +54,7 @@ public interface Kernel32 extends Library {
 		public short wMilliseconds;
 		@Override
 		protected List<String> getFieldOrder() {
-			return  null;
+			 return Arrays.asList(new String[] { "wYear", "wMonth", "wDayOfWeek", "wDay", "wHour", "wMinute", "wSecond", "wMilliseconds" });
 		}
 	}
 
@@ -67,7 +67,7 @@ public interface Kernel32 extends Library {
 		public int dwHighDateTime;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("dwLowDateTime", "dwHighDateTime");
+			return Arrays.asList(new String[] { "dwLowDateTime", "dwHighDateTime" });
 		}
 	}
 	
@@ -80,7 +80,7 @@ public interface Kernel32 extends Library {
 		boolean bInheritHandle;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("nLength", "lpSecurityDescriptor","bInheritHandle");
+			return Arrays.asList(new String[] { "dwLength", "lpSecurityDescriptor", "bInheritHandle" });
 		}
 	}
 
@@ -98,7 +98,7 @@ public interface Kernel32 extends Library {
 		int hEvent;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("Internal", "InternalHigh","Offset","OffsetHigh","hEvent");
+			 return Arrays.asList(new String[] { "Internal", "InternalHigh", "Offset", "OffsetHigh", "hEvent" });
 		}
 	}
 	

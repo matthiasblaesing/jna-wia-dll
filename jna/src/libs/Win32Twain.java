@@ -18,7 +18,7 @@ public interface Win32Twain extends Library {
 		public short Reserved;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("ConditionCode", "Reserved");
+			return Arrays.asList(new String[] {"ConditionCode", "Reserved"});
 		}
 	}
 
@@ -64,7 +64,7 @@ public interface Win32Twain extends Library {
 		@Override
 		protected List<String> getFieldOrder() {
 		
-			return Arrays.asList("MajorNum", "MinorNum","Language","Country","Info");
+			return Arrays.asList(new String[] {"MajorNum", "MinorNum","Language","Country","Info"});
 		}
 	}
 
@@ -143,7 +143,7 @@ public interface Win32Twain extends Library {
 		}
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("Id", "Version","ProtocolMajor","ProtocolMinor","SupportedGroups","Manufacturer","ProductFamily","ProductName");
+			return Arrays.asList(new String[] {"Id", "Version","ProtocolMajor","ProtocolMinor","SupportedGroups","Manufacturer","ProductFamily","ProductName"});
 		}
 	}
 
@@ -157,7 +157,7 @@ public interface Win32Twain extends Library {
 		public short Frac;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("Whole", "Frac");
+			return Arrays.asList(new String[] {"Whole", "Frac"});
 		}
 	}
 
@@ -187,7 +187,7 @@ public interface Win32Twain extends Library {
 		public short Compression;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("XResolution", "YResolution","ImageWidth","ImageLength","SamplesPerPixel","BitsPerSample","BitsPerPixel","Planar","PixelType","Compression");
+			return Arrays.asList(new String[] {"XResolution", "YResolution","ImageWidth","ImageLength","SamplesPerPixel","BitsPerSample","BitsPerPixel","Planar","PixelType","Compression"});
 		}
 	}
 	
@@ -208,7 +208,7 @@ public interface Win32Twain extends Library {
 		public byte rgbReserved;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("rgbBlue", "rgbGreen","rgbRed","rgbReserved");
+			return Arrays.asList(new String[] {"rgbBlue", "rgbGreen","rgbRed","rgbReserved"});
 		}
 	}
 	
@@ -224,7 +224,7 @@ public interface Win32Twain extends Library {
 		public int hParent;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("ShowUI", "ModalUI","hParent");
+			return Arrays.asList(new String[] {"ShowUI", "ModalUI","hParent"});
 		}
 	}
 
@@ -241,7 +241,7 @@ public interface Win32Twain extends Library {
 		public int Reserved;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("EOJ", "Reserved");
+			return Arrays.asList(new String[] {"EOJ", "Reserved"});
 		}
 	}
 
@@ -255,7 +255,7 @@ public interface Win32Twain extends Library {
 		public short TWMessage;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("pEvent", "TWMessage");
+			return Arrays.asList(new String[] {"pEvent", "TWMessage"});
 		}
 	}
 
@@ -320,7 +320,7 @@ public interface Win32Twain extends Library {
 		public int biClrImportant;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("biSize", "biWidth","biHeight","biPlanes","biBitCount","biCompression","biSizeImage","biXPelsPerMeter","biYPelsPerMeter","biClrUsed","biClrImportant");
+			return Arrays.asList(new String[] {"biSize", "biWidth","biHeight","biPlanes","biBitCount","biCompression","biSizeImage","biXPelsPerMeter","biYPelsPerMeter","biClrUsed","biClrImportant"});
 		} 
 	}
 

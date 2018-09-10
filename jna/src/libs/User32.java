@@ -3,10 +3,12 @@ package libs;
 import java.util.Arrays;
 import java.util.List;
 
-import com.sun.jna.Library;
 import com.sun.jna.Structure;
+import com.sun.jna.platform.win32.WinNT;
+import com.sun.jna.platform.win32.WinUser;
+import com.sun.jna.win32.StdCallLibrary;
 
-public interface User32 extends Library {
+public interface User32 extends StdCallLibrary, WinUser, WinNT  {
 	//http://msdn.microsoft.com/en-us/library/ms680356(VS.85).aspx
 	boolean MessageBeep(int uType);
 
@@ -34,7 +36,7 @@ public interface User32 extends Library {
 		public int y;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList("x", "y");
+			return  createFieldsOrder("x", "y");
 		}
 	}
 
@@ -47,12 +49,13 @@ public interface User32 extends Library {
 			POINT pt;
 			@Override
 			protected List<String> getFieldOrder() {
-				return Arrays.asList("hwnd", "message","wParm","lParm");
+			    return Arrays.asList(new String[] { "message","hwnd", "wParm",
+                        "lParm"});
 			}
 		}
 
 	//http://msdn.microsoft.com/en-us/library/ms644936(VS.85).aspx
-	boolean GetMessageA(MSG lpMsg, int hWnd, int wMsgFilterMin, int wMsgFilterMax);
+	int GetMessageA(MSG lpMsg, int hWnd, int wMsgFilterMin, int wMsgFilterMax);
 	//http://msdn.microsoft.com/en-us/library/ms644955(VS.85).aspx
 	boolean TranslateMessage(MSG lpMsg);
 	//http://msdn.microsoft.com/en-us/library/ms644934(VS.85).aspx
