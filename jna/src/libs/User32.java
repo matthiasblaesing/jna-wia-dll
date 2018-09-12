@@ -18,6 +18,7 @@ public interface User32 extends Library  {
 			int hndInst, Object parm);
 	boolean SetWindowPos(int hWnd, int hWndInsAfter, int x, int y, int cx, int cy, short uFlgs);
 	int DestroyWindow(int hdl);
+	int  FindWindowA(String className, String windowName);
 	
 	//http://msdn.microsoft.com/en-us/library/ms644958(VS.85).aspx
 	/*typedef struct {

@@ -154,13 +154,8 @@ public class JNATwain {
 		return image;
 	}
 
-	/**
-	 * @param hwnd
-	 */
-	@SuppressWarnings("unused")
-	private static void destroyWindow(int hwnd) {
-		int destroyWindow = user32.DestroyWindow(hwnd);
-		//System.out.println("destroyWindow Status  " + destroyWindow);
+	private static int destroyWindow(int hwnd) {
+		return user32.DestroyWindow(hwnd);
 	}
 
 	public static int selectSourceAsDefault() throws JTwainException {
@@ -210,7 +205,7 @@ public class JNATwain {
 			throw new JTwainException("Unable to close DSM");
 		}
 		// System.out.printf("app.Id: %d%n", app.Id);
-		stat = user32.DestroyWindow(hwnd);
+		stat = destroyWindow(hwnd);
 		if (stat == 0) {
 			throw new JTwainException("Unable to destroy private window");
 		}
