@@ -3,7 +3,6 @@ package democode;
 import com.sun.jna.Native;
 
 import libs.Kernel32;
-import libs.User32;
 
 public class TickCount {
 

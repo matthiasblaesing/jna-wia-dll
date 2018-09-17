@@ -1,7 +1,6 @@
 package democode;
 
 import com.sun.jna.Native;
-import libs.User32;
 
 public class LockWorkStation {
   public static void main(String[] args) {

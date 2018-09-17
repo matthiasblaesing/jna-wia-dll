@@ -11,6 +11,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 
+import net.javajeff.jtwain.ImageListener;
 import net.javajeff.jtwain.JNATwain;
 import net.javajeff.jtwain.JTwainException;
 
@@ -72,8 +73,8 @@ public class JTwainDemo extends JFrame
                       // to the user. Acquire one image (no matter how many
                       // images are specified) if the dialog box's Scan button
                       // is clicked.
-
-                      Image im = JNATwain.acquire ();
+                	  ImageListener imageListener= new ScannerListener(); 
+                      Image im = JNATwain.acquire (true,imageListener);
 
                       // Return if the dialog box's Cancel button was clicked.
 

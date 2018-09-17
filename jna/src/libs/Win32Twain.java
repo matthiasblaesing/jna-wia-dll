@@ -239,11 +239,12 @@ public interface Win32Twain extends Library {
 } TW_PENDINGXFERS, FAR *pTW_PENDINGXFERS;*/	
 
 	public static class TW_PENDINGXFERS extends Structure {
+		public short Count;
 		public int EOJ;
 		public int Reserved;
 		@Override
 		protected List<String> getFieldOrder() {
-			return Arrays.asList(new String[] {"EOJ", "Reserved"});
+			return Arrays.asList(new String[] {"Count","EOJ", "Reserved"});
 		}
 	}
 

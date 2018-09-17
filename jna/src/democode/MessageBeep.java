@@ -6,8 +6,6 @@ import javax.swing.JOptionPane;
 
 import com.sun.jna.Native;
 
-import libs.User32;
-
 public class MessageBeep {
 	private static void messageBeep(int uType) {
 	    User32 user32 = (User32) Native.loadLibrary("User32", User32.class);
