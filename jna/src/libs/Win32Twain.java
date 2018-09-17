@@ -5,6 +5,8 @@ import java.util.List;
 import com.sun.jna.Library;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
+import com.sun.jna.platform.win32.WinDef.HWND;
+import com.sun.jna.platform.win32.WinDef.LPVOID;
 
 public interface Win32Twain extends Library {
 
@@ -221,7 +223,7 @@ public interface Win32Twain extends Library {
 	public static class TW_USERINTERFACE extends Structure {
 		public boolean ShowUI;
 		public boolean ModalUI;
-		public int hParent;
+		public HWND hParent;
 		@Override
 		protected List<String> getFieldOrder() {
 			return Arrays.asList(new String[] {"ShowUI", "ModalUI","hParent"});
@@ -251,7 +253,7 @@ public interface Win32Twain extends Library {
 } TW_EVENT, FAR * pTW_EVENT;*/
 
 	public static class TW_EVENT extends Structure {
-		public Pointer pEvent;
+		public LPVOID          pEvent;
 		public short TWMessage;
 		@Override
 		protected List<String> getFieldOrder() {

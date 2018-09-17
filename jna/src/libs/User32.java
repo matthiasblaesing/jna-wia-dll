@@ -6,19 +6,17 @@ import java.util.List;
 import com.sun.jna.Library;
 import com.sun.jna.Structure;
 
-public interface User32 extends Library  {
+public interface User32 extends Library {
 	//http://msdn.microsoft.com/en-us/library/ms680356(VS.85).aspx
 	boolean MessageBeep(int uType);
 
 	boolean LockWorkStation();
 	int GetDesktopWindow();
-	int GetForegroundWindow();
 	int CreateWindowExA(int styleEx, String className, String windowName, int style, 
 			int x, int y, int width, int height, int hndParent, int hndMenu, 
 			int hndInst, Object parm);
 	boolean SetWindowPos(int hWnd, int hWndInsAfter, int x, int y, int cx, int cy, short uFlgs);
 	int DestroyWindow(int hdl);
-	int  FindWindowA(String className, String windowName);
 	
 	//http://msdn.microsoft.com/en-us/library/ms644958(VS.85).aspx
 	/*typedef struct {

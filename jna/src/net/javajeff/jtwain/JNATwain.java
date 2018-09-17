@@ -7,11 +7,12 @@ import java.awt.image.MemoryImageSource;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
+import com.sun.jna.platform.win32.User32;
+import com.sun.jna.platform.win32.WinDef.HWND;
+import com.sun.jna.platform.win32.WinDef.LPVOID;
 import com.sun.jna.ptr.IntByReference;
 
 import libs.Kernel32;
-import libs.User32;
-import libs.User32.MSG;
 import libs.Win32Twain;
 import libs.Win32Twain.BITMAPINFOHEADER;
 import libs.Win32Twain.TW_EVENT;
@@ -23,50 +24,55 @@ import libs.Win32Twain.TW_USERINTERFACE;
 
 public class JNATwain {
 
+	private static User32 jUser32 = com.sun.jna.platform.win32.User32.INSTANCE;
+	private static com.sun.jna.platform.win32.Kernel32 jKernel32 = com.sun.jna.platform.win32.Kernel32.INSTANCE;
+
 	public static boolean init(boolean loadDSM) {
-		kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
-		user32 = (User32) Native.loadLibrary("user32", User32.class);
+		kernel32 = Native.loadLibrary("kernel32", Kernel32.class);
 		if (loadDSM) {
-			twain = (Win32Twain) Native.loadLibrary("TWAINDSM", Win32Twain.class);
+			twain = Native.loadLibrary("TWAINDSM", Win32Twain.class);
 		} else {
 			if (System.getProperty("sun.arch.data.model").indexOf("64") != -1) {
-				twain = (Win32Twain) Native.loadLibrary("TWAINDSM", Win32Twain.class);
+				twain = Native.loadLibrary("TWAINDSM", Win32Twain.class);
 			} else {
-				twain = (Win32Twain) Native.loadLibrary("Twain_32", Win32Twain.class);
+				twain = Native.loadLibrary("Twain_32", Win32Twain.class);
 			}
 		}
-
 		return true;
 	}
 
+	private JNATwain() {
+
+	}
+
 	public static Image acquire() throws JTwainException {
-		int hwnd = 0;
+
 		TW_USERINTERFACE ui = new TW_USERINTERFACE();
 		TW_IDENTITY srcID = new TW_IDENTITY();
 
-		hwnd = user32.CreateWindowExA(0, "STATIC", "", WS_POPUPWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-				CW_USEDEFAULT, CW_USEDEFAULT, HWND_DESKTOP, 0,
-				0/* Win32TwainLibrary.HMODULE */, null);
-		// System.out.printf("CreateWindow: %d%n", hwnd);
-		if (hwnd == 0) {
-			throw new JTwainException("Unable to create private window");
-		}
-		boolean ok = user32.SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, (short) SWP_NOSIZE);
+		HWND hWnd = jUser32.CreateWindowEx(0, "Static", "", 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000,
+				jUser32.GetDesktopWindow(), null,
+				jKernel32.GetModuleHandle("")/* Win32TwainLibrary.HMODULE */, null);
+		getError();
+		boolean ok = jUser32.SetWindowPos(hWnd, getTOPHWND(), 0, 0, 0, 0, 0x0001);
 		if (!ok) {
-			destroyWindow(hwnd);
-			throw new JTwainException("Unable to position private window");
+			jUser32.DestroyWindow(hWnd);
+			throw new JTwainException("Unable to position private window (select)");
 		}
-		int stat = OpenDSM(g_AppID, hwnd);
-		if (stat != TWRC_SUCCESS) {
-			destroyWindow(hwnd);
+		long nativeValue = Pointer.nativeValue(hWnd.getPointer());
+		int bar = Math.toIntExact(nativeValue);
+		getError();
+		int stat = OpenDSM(g_AppID, bar);
+		if (stat != TwainConstants.TWRC_SUCCESS) {
+			jUser32.DestroyWindow(hWnd);
 			throw new JTwainException("Unable to open DSM");
 		}
 		// System.out.printf("app.Id: %d%n", app.Id);
 
 		stat = GetDefaultSource(g_AppID, srcID);
-		if (stat != TWRC_SUCCESS) {
-			CloseDSM(g_AppID, hwnd);
-			destroyWindow(hwnd);
+		if (stat != TwainConstants.TWRC_SUCCESS) {
+			CloseDSM(g_AppID, bar);
+			jUser32.DestroyWindow(hWnd);
 			stat = GetConditionCode(g_AppID, srcID);
 			throw new JTwainException("Unable to get default: " + stat);
 		}
@@ -74,56 +80,60 @@ public class JNATwain {
 		// srcID.getManufacturer(), srcID.getProductFamily(),
 		// srcID.getProductName());
 		stat = OpenDefaultSource(g_AppID, srcID);
-		if (stat != TWRC_SUCCESS) {
-			CloseDSM(g_AppID, hwnd);
-			destroyWindow(hwnd);
+		if (stat != TwainConstants.TWRC_SUCCESS) {
+			CloseDSM(g_AppID, bar);
+			jUser32.DestroyWindow(hWnd);
 			stat = GetConditionCode(g_AppID, srcID);
 			throw new JTwainException("Unable to open default: " + stat);
 		}
 
 		ui.ShowUI = true;
 		ui.ModalUI = false;
-		ui.hParent = hwnd;
+		ui.hParent = hWnd;
 
 		stat = EnableDefaultSource(g_AppID, srcID, ui);
-		if (stat != TWRC_SUCCESS) {
+		if (stat != TwainConstants.TWRC_SUCCESS) {
 			CloseDefaultSource(g_AppID, srcID);
-			CloseDSM(g_AppID, hwnd);
-			destroyWindow(hwnd);
+			CloseDSM(g_AppID, bar);
+			jUser32.DestroyWindow(hWnd);
 			stat = GetConditionCode(g_AppID, srcID);
 			throw new JTwainException("Unable to enable default DS: " + stat);
 		}
 
-		MSG msg = new MSG();
+		com.sun.jna.platform.win32.WinUser.MSG msg = new com.sun.jna.platform.win32.WinUser.MSG();
+
 		TW_EVENT event = new TW_EVENT();
 		TW_PENDINGXFERS pxfers = new TW_PENDINGXFERS();
-		while (user32.GetMessageA(msg, 0, 0, 0)) {
-			event.pEvent = msg.getPointer();
+		int getMsg;
+		while ((getMsg = jUser32.GetMessage(msg, null, 0, 0)) != 0) {
+			event.pEvent = new LPVOID(msg.getPointer());
 			event.TWMessage = 0;
 			stat = ProcessEvent(g_AppID, srcID, event);
-			if (stat == TWRC_NOTDSEVENT) {
-				user32.TranslateMessage(msg);
-				user32.DispatchMessageA(msg);
+			if (stat == TwainConstants.TWRC_NOTDSEVENT) {
+				jUser32.TranslateMessage(msg);
+				getError();
+				jUser32.DispatchMessage(msg);
+				getError();
 				continue;
 			}
-			if (event.TWMessage == MSG_CLOSEDSREQ) {
+			if (event.TWMessage == TwainConstants.MSG_CLOSEDSREQ) {
 				break;
 			}
-			if (event.TWMessage == MSG_XFERREADY) {
+			if (event.TWMessage == TwainConstants.MSG_XFERREADY) {
 				TW_IMAGEINFO ii = new TW_IMAGEINFO();
 				stat = GetImageInfo(g_AppID, srcID, ii);
-				if (stat == TWRC_FAILURE) {
+				if (stat == TwainConstants.TWRC_FAILURE) {
 					ResetPendingTransfers(g_AppID, srcID, pxfers);
 					throw new JTwainException("Unable to obtain image information (acquire)");
 				}
-				if (ii.Compression != TWCP_NONE || ii.BitsPerPixel != 8 && ii.BitsPerPixel != 24) {
+				if (ii.Compression != TwainConstants.TWCP_NONE || ii.BitsPerPixel != 8 && ii.BitsPerPixel != 24) {
 					// Cancel all transfers.
 					ResetPendingTransfers(g_AppID, srcID, pxfers);
 					throw new JTwainException("Image compressed or not 8-bit/24-bit (acquire)");
 				}
 				int hdl[] = new int[1];
 				stat = PerformImageTransfer(g_AppID, srcID, hdl);
-				if (stat != TWRC_XFERDONE) {
+				if (stat != TwainConstants.TWRC_XFERDONE) {
 					ResetPendingTransfers(g_AppID, srcID, pxfers);
 					throw new JTwainException("User aborted transfer or failure (acquire)");
 				}
@@ -142,73 +152,64 @@ public class JNATwain {
 				kernel32.GlobalUnlock(hdl[0]);
 				kernel32.GlobalFree(hdl[0]);
 				EndTransfers(g_AppID, srcID, pxfers);
-				stat = TWRC_SUCCESS;
+				stat = TwainConstants.TWRC_SUCCESS;
 				break;
 			}
 		}
 		DisableDefaultSource(g_AppID, srcID, ui);
 		CloseDefaultSource(g_AppID, srcID);
-		CloseDSM(g_AppID, hwnd);
-		destroyWindow(hwnd);
-		
+		CloseDSM(g_AppID, bar);
+		jUser32.DestroyWindow(hWnd);
+
 		return image;
 	}
 
-	private static int destroyWindow(int hwnd) {
-		return user32.DestroyWindow(hwnd);
-	}
-
 	public static int selectSourceAsDefault() throws JTwainException {
-		int hwnd = user32.CreateWindowExA(0, "STATIC", "", WS_POPUPWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-				CW_USEDEFAULT, HWND_DESKTOP, 0,
-				0/* Win32TwainLibrary.HMODULE */, null);
-		// System.out.printf("CreateWindow: %d%n", hwnd);
-		if (hwnd == 0) {
-			throw new JTwainException("Unable to create private window (select)");
-		}
-		boolean ok = user32.SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, (short) SWP_NOSIZE);
+		HWND hWnd = jUser32.CreateWindowEx(com.sun.jna.platform.win32.User32.WS_EX_TOPMOST, "Static", "MyWindow1",
+				0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, jUser32.GetDesktopWindow(), null,
+				jKernel32.GetModuleHandle("")/* Win32TwainLibrary.HMODULE */, null);
+
+		boolean ok = jUser32.SetWindowPos(hWnd, getTOPHWND(), 0, 0, 0, 0, 0x0001);
 		if (!ok) {
-			destroyWindow(hwnd);
+			jUser32.DestroyWindow(hWnd);
 			throw new JTwainException("Unable to position private window (select)");
 		}
 		setupAppId(g_AppID);
-		int stat = OpenDSM(g_AppID, hwnd);
-		// int stat = OpenDSM(g_AppID, -1);
-		if (stat != TWRC_SUCCESS) {
-			destroyWindow(hwnd);
+		long nativeValue = Pointer.nativeValue(hWnd.getPointer());
+		int bar = Math.toIntExact(nativeValue);
+		getError();
+		int stat = OpenDSM(g_AppID, bar);
+		if (stat != TwainConstants.TWRC_SUCCESS) {
+			jUser32.DestroyWindow(hWnd);
 			throw new JTwainException("Unable to open DSM (select)");
 		}
-		// System.out.printf("app.Id: %d%n", app.Id);
-		// BEGIN: Memory Alignment Problem Demo
+
 		TW_IDENTITY srcID = new TW_IDENTITY(Structure.ALIGN_DEFAULT);
 		stat = SelectSource(g_AppID, srcID);
-		if (stat != TWRC_SUCCESS) {
-			CloseDSM(g_AppID, hwnd);
-			destroyWindow(hwnd);
-			if (stat == TWRC_CANCEL)
+		if (stat != TwainConstants.TWRC_SUCCESS) {
+			CloseDSM(g_AppID, bar);
+			jUser32.DestroyWindow(hWnd);
+			if (stat == TwainConstants.TWRC_CANCEL)
 				return stat;
 			stat = GetConditionCode(g_AppID, srcID);
 			throw new JTwainException("Unable to display user interface: " + stat);
 		}
 
-		dump(srcID);
-		System.out.printf("ProtocolMajor: %02x%n", srcID.ProtocolMajor);
-		System.out.printf("ProtocolMinor: %02x%n", srcID.ProtocolMinor);
-		System.out.printf("SupportedGroups: %04x%n", srcID.SupportedGroups);
+		/*
+		 * dump(srcID); System.out.printf("ProtocolMajor: %02x%n",
+		 * srcID.ProtocolMajor); System.out.printf("ProtocolMinor: %02x%n",
+		 * srcID.ProtocolMinor); System.out.printf("SupportedGroups: %04x%n",
+		 * srcID.SupportedGroups);
+		 */
 		System.out.printf("Manufacturer: %s%n", new String(srcID.Manufacturer, 0, 34));
-		// END: Memory Alignment Problem Demo
-		// System.out.printf("Selected M, F, N: %s, %s, %s%n",
-		// src.getManufacturer(), src.getProductFamily(), src.getProductName());
-		stat = CloseDSM(g_AppID, hwnd);
+
+		stat = CloseDSM(g_AppID, bar);
 		if (stat != 0) {
-			destroyWindow(hwnd);
+			jUser32.DestroyWindow(hWnd);
 			throw new JTwainException("Unable to close DSM");
 		}
-		// System.out.printf("app.Id: %d%n", app.Id);
-		stat = destroyWindow(hwnd);
-		if (stat == 0) {
-			throw new JTwainException("Unable to destroy private window");
-		}
+		jUser32.DestroyWindow(hWnd);
+		getError();
 		return stat;
 	}
 
@@ -284,13 +285,13 @@ public class JNATwain {
 		MemoryImageSource mis = new MemoryImageSource(width, height, pixels, 0, width);
 		return Toolkit.getDefaultToolkit().createImage(mis);
 	}
-	
-/* Referencehttps://www.twain.org/wp-content/uploads/2016/03/twain1.h*/
+
+	/* Referencehttps://www.twain.org/wp-content/uploads/2016/03/twain1.h */
 	private static void setupAppId(TW_IDENTITY appID) {
 		appID.Id = 0;
 		appID.ProtocolMajor = 2;
 		appID.ProtocolMinor = 2;
-		appID.SupportedGroups = (DG_CONTROL | DG_IMAGE);
+		appID.SupportedGroups = (TwainConstants.DG_CONTROL | TwainConstants.DG_IMAGE);
 		appID.setManufacturer("Swiss AviationSoftware");
 		appID.setProductFamily("MRO Software");
 		appID.setProductName("AMOS Client");
@@ -303,7 +304,8 @@ public class JNATwain {
 	}
 
 	private static int OpenDSM(TW_IDENTITY application, int winHdl) {
-		int stat = twain.DSM_Entry(application, null, DG_CONTROL, DAT_PARENT, MSG_OPENDSM,
+		int stat = twain.DSM_Entry(application, null, TwainConstants.DG_CONTROL, TwainConstants.DAT_PARENT,
+				TwainConstants.MSG_OPENDSM,
 				/* winHdl */ // does not work
 				/* new int[] {winHdl} */ // works
 				new IntByReference(winHdl));
@@ -311,68 +313,81 @@ public class JNATwain {
 	}
 
 	private static int GetDefaultSource(TW_IDENTITY application, TW_IDENTITY src) {
-		int stat = twain.DSM_Entry(application, null, DG_CONTROL, DAT_IDENTITY, MSG_GETDEFAULT, src);
+		int stat = twain.DSM_Entry(application, null, TwainConstants.DG_CONTROL, TwainConstants.DAT_IDENTITY,
+				TwainConstants.MSG_GETDEFAULT, src);
 		return stat;
 	}
 
 	private static int OpenDefaultSource(TW_IDENTITY application, TW_IDENTITY src) {
-		int stat = twain.DSM_Entry(application, null, DG_CONTROL, DAT_IDENTITY, MSG_OPENDS, src);
+		int stat = twain.DSM_Entry(application, null, TwainConstants.DG_CONTROL, TwainConstants.DAT_IDENTITY,
+				TwainConstants.MSG_OPENDS, src);
 		return stat;
 	}
 
 	private static int CloseDefaultSource(TW_IDENTITY application, TW_IDENTITY src) {
-		int stat = twain.DSM_Entry(application, null, DG_CONTROL, DAT_IDENTITY, MSG_CLOSEDS, src);
+		int stat = twain.DSM_Entry(application, null, TwainConstants.DG_CONTROL, TwainConstants.DAT_IDENTITY,
+				TwainConstants.MSG_CLOSEDS, src);
 		return stat;
 	}
 
 	private static int SelectSource(TW_IDENTITY application, TW_IDENTITY src) {
-		int stat = twain.DSM_Entry(application, null, DG_CONTROL, DAT_IDENTITY, MSG_USERSELECT, src);
+		int stat = twain.DSM_Entry(application, null, TwainConstants.DG_CONTROL, TwainConstants.DAT_IDENTITY,
+				TwainConstants.MSG_USERSELECT, src);
 		return stat;
 	}
 
 	private static int EnableDefaultSource(TW_IDENTITY application, TW_IDENTITY src, TW_USERINTERFACE ui) {
-		int stat = twain.DSM_Entry(application, src, DG_CONTROL, DAT_USERINTERFACE, MSG_ENABLEDS, ui);
+		int stat = twain.DSM_Entry(application, src, TwainConstants.DG_CONTROL, TwainConstants.DAT_USERINTERFACE,
+				TwainConstants.MSG_ENABLEDS, ui);
 		return stat;
 	}
 
 	private static int DisableDefaultSource(TW_IDENTITY application, TW_IDENTITY src, TW_USERINTERFACE ui) {
-		int stat = twain.DSM_Entry(application, src, DG_CONTROL, DAT_USERINTERFACE, MSG_DISABLEDS, ui);
+		int stat = twain.DSM_Entry(application, src, TwainConstants.DG_CONTROL, TwainConstants.DAT_USERINTERFACE,
+				TwainConstants.MSG_DISABLEDS, ui);
 		return stat;
 	}
 
 	private static int GetImageInfo(TW_IDENTITY application, TW_IDENTITY src, TW_IMAGEINFO ii) {
-		int stat = twain.DSM_Entry(application, src, DG_IMAGE, DAT_IMAGEINFO, MSG_GET, ii);
+		int stat = twain.DSM_Entry(application, src, TwainConstants.DG_IMAGE, TwainConstants.DAT_IMAGEINFO,
+				TwainConstants.MSG_GET, ii);
 		return stat;
 	}
 
 	private static int ResetPendingTransfers(TW_IDENTITY application, TW_IDENTITY src, TW_PENDINGXFERS xfers) {
-		int stat = twain.DSM_Entry(application, src, DG_CONTROL, DAT_PENDINGXFERS, MSG_RESET, xfers);
+		int stat = twain.DSM_Entry(application, src, TwainConstants.DG_CONTROL, TwainConstants.DAT_PENDINGXFERS,
+				TwainConstants.MSG_RESET, xfers);
 		return stat;
 	}
-	
+
 	private static int EndTransfers(TW_IDENTITY application, TW_IDENTITY src, TW_PENDINGXFERS xfers) {
-		int stat = twain.DSM_Entry(application, src, DG_CONTROL, DAT_PENDINGXFERS, MSG_ENDXFER, xfers);
+		int stat = twain.DSM_Entry(application, src, TwainConstants.DG_CONTROL, TwainConstants.DAT_PENDINGXFERS,
+				TwainConstants.MSG_ENDXFER, xfers);
 		return stat;
 	}
 
 	private static int ProcessEvent(TW_IDENTITY application, TW_IDENTITY src, TW_EVENT event) {
-		int stat = twain.DSM_Entry(application, src, DG_CONTROL, DAT_EVENT, MSG_PROCESSEVENT, event);
+		int stat = twain.DSM_Entry(application, src, TwainConstants.DG_CONTROL, TwainConstants.DAT_EVENT,
+				TwainConstants.MSG_PROCESSEVENT, event);
 		return stat;
 	}
 
 	private static int PerformImageTransfer(TW_IDENTITY application, TW_IDENTITY src, int hdl[]) {
-		int stat = twain.DSM_Entry(application, src, DG_IMAGE, DAT_IMAGENATIVEXFER, MSG_GET, hdl);
+		int stat = twain.DSM_Entry(application, src, TwainConstants.DG_IMAGE, TwainConstants.DAT_IMAGENATIVEXFER,
+				TwainConstants.MSG_GET, hdl);
 		return stat;
 	}
 
 	private static int CloseDSM(TW_IDENTITY application, int winHdl) {
-		int stat = twain.DSM_Entry(application, null, DG_CONTROL, DAT_PARENT, MSG_CLOSEDSM, winHdl);
+		int stat = twain.DSM_Entry(application, null, TwainConstants.DG_CONTROL, TwainConstants.DAT_PARENT,
+				TwainConstants.MSG_CLOSEDSM, winHdl);
 		return stat;
 	}
 
 	private static int GetConditionCode(TW_IDENTITY application, TW_IDENTITY src) {
 		TW_STATUS status = new TW_STATUS();
-		int stat = twain.DSM_Entry(application, null, DG_CONTROL, DAT_STATUS, MSG_GET, status);
+		int stat = twain.DSM_Entry(application, null, TwainConstants.DG_CONTROL, TwainConstants.DAT_STATUS,
+				TwainConstants.MSG_GET, status);
 		return (stat == 0) ? status.ConditionCode : ((stat << 16) + status.ConditionCode);
 	}
 
@@ -404,28 +419,27 @@ public class JNATwain {
 		System.out.println();
 	}
 
+	private static HWND getTOPHWND() {
+		HWND HWND_TOP = new HWND();
+		Pointer p = new Pointer(0);
+		HWND_TOP.setPointer(p);
+		return HWND_TOP;
+	}
+
+	private static int getError() {
+		int rc = com.sun.jna.platform.win32.Kernel32.INSTANCE.GetLastError();
+
+		if (rc != 0)
+			System.out.println("error: " + rc);
+
+		return rc;
+	}
+
 	public static Win32Twain twain = null;
 	private static Kernel32 kernel32 = null;
 	private static User32 user32 = null;
 	private static Image image = null;
-	private static final short MSG_GET = 1, MSG_GETDEFAULT = 3, MSG_RESET = 7, MSG_CLOSEDSM = 0x0302,
-			MSG_OPENDSM = 0x0301, MSG_OPENDS = 0x0401, MSG_CLOSEDS = 0x0402, MSG_USERSELECT = 0x0403,
-			MSG_ENABLEDS = 0x0502, MSG_DISABLEDS = 0x0501, MSG_PROCESSEVENT = 0x0601,MSG_ENDXFER = 0x0701;
-	private static final short DAT_EVENT = 2, DAT_IDENTITY = 3, DAT_PARENT = 4, DAT_PENDINGXFERS = 5, DAT_STATUS = 8,
-			DAT_USERINTERFACE = 9, DAT_IMAGEINFO = 0x0101, DAT_IMAGENATIVEXFER = 0x0104;
-	private static final int MSG_CLOSEDSREQ = 0x0102, MSG_XFERREADY = 0x0101;
-	private static final int TWCP_NONE = 0;
-	@SuppressWarnings("unused")
-	private static final short DG_CONTROL = 1, DG_IMAGE = 2, DG_AUDIO = 4;
-	@SuppressWarnings("unused")
-	private static final int TWRC_SUCCESS = 0, TWRC_FAILURE = 1, twrc_checkstatus = 2, TWRC_CANCEL = 3,
-			TWRC_NOTDSEVENT = 5, TWRC_XFERDONE = 6;
-	private static final int HWND_DESKTOP = 0x10014;
-	private static final int WS_POPUPWINDOW = 0x80000000 | 0x00800000 | 0x00080000;
-	private static final int CW_USEDEFAULT = 0x80000000;
-	@SuppressWarnings("unused")
-	private static final int HWND_TOPMOST = -1;
-	private static final int HWND_TOP = 0;
-	private static final int SWP_NOSIZE = 1;
+
 	private static TW_IDENTITY g_AppID = new TW_IDENTITY();
+
 }
