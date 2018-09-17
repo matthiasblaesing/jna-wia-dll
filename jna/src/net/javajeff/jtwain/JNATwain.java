@@ -55,7 +55,7 @@ public class JNATwain {
 
 	public static Image acquire(boolean showGui, ImageListener imageListener) throws JTwainException {
 		HWND hWnd = jUser32.CreateWindowEx(0, "Static", "", 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000,
-				jUser32.GetDesktopWindow(), null,
+				jUser32.GetForegroundWindow(), null,
 				jKernel32.GetModuleHandle("")/* Win32TwainLibrary.HMODULE */, null);
 		boolean ok = jUser32.SetWindowPos(hWnd, getTophwnd(), 0, 0, 0, 0, 0x0001);
 		if (!ok) {
@@ -197,7 +197,7 @@ public class JNATwain {
 
 	public static int selectSourceAsDefault() throws JTwainException {
 		HWND hWnd = jUser32.CreateWindowEx(com.sun.jna.platform.win32.User32.WS_EX_TOPMOST, "Static", "MyWindow1",
-				0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, jUser32.GetDesktopWindow(), null,
+				0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, jUser32.GetForegroundWindow(), null,
 				jKernel32.GetModuleHandle(""), null);
 
 		boolean ok = jUser32.SetWindowPos(hWnd, getTophwnd(), 0, 0, 0, 0, 0x0001);
