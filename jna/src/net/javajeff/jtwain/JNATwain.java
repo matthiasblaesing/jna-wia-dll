@@ -1,9 +1,10 @@
 package net.javajeff.jtwain;
 
 import java.awt.Image;
-
 import java.awt.Toolkit;
 import java.awt.image.MemoryImageSource;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -35,6 +36,7 @@ public class JNATwain {
 
 	private static User32 jUser32 = com.sun.jna.platform.win32.User32.INSTANCE;
 	private static com.sun.jna.platform.win32.Kernel32 jKernel32 = com.sun.jna.platform.win32.Kernel32.INSTANCE;
+	private static final Logger logger = Logger.getLogger(JNATwain.class.getName());
 
 	public static boolean init(boolean loadDSM) {
 		kernel32 = Native.loadLibrary("kernel32", Kernel32.class);
@@ -68,7 +70,6 @@ public class JNATwain {
 			jUser32.DestroyWindow(hWnd);
 			throw new JTwainException("Unable to open DSM");
 		}
-		// System.out.printf("app.Id: %d%n", app.Id);
 		TW_IDENTITY srcID = new TW_IDENTITY();
 		stat = GetDefaultSource(g_AppID, srcID);
 		if (stat != TwainConstants.TWRC_SUCCESS) {
@@ -77,8 +78,8 @@ public class JNATwain {
 			stat = GetConditionCode(g_AppID, srcID);
 			throw new JTwainException("Unable to get default: " + stat);
 		}
-		System.out.printf("Selected M, F, N: %s, %s, %s%n", srcID.getManufacturer(), srcID.getProductFamily(),
-				srcID.getProductName());
+		logger.log(Level.INFO, "Selected M, F, N: {0} {1} {2} ", new Object[] { srcID.getManufacturer(), srcID.getProductFamily(), srcID.getProductName()});
+			
 		stat = OpenDefaultSource(g_AppID, srcID);
 		if (stat != TwainConstants.TWRC_SUCCESS) {
 			CloseDSM(g_AppID, nativeHwnd);
@@ -176,9 +177,9 @@ public class JNATwain {
 		}
 		Pointer p = kernel32.GlobalLock(hdl[0]);
 		if (p != null) {
-			System.out.printf("handle: %s%n", p.toString());
+			String handle = p.toString();
+			logger.log(Level.INFO,"Image handle available: {0}",handle);
 			BITMAPINFOHEADER bmih = new BITMAPINFOHEADER(p);
-			// dump(bmih);
 			if (ii.BitsPerPixel == 8)
 				image = xferDIB8toImage(bmih);
 			else
@@ -207,7 +208,10 @@ public class JNATwain {
 		}
 		setupAppId(g_AppID);
 		int nativeHwnd = Math.toIntExact(Pointer.nativeValue(hWnd.getPointer()));
-		getError();
+		int error = getError();
+		if (error != 0) {
+			logger.log(Level.INFO, "Kernel32.INSTANCE.GetLastError: {0} ", error);
+		}
 		int stat = OpenDSM(g_AppID, nativeHwnd);
 		if (stat != TwainConstants.TWRC_SUCCESS) {
 			jUser32.DestroyWindow(hWnd);
@@ -225,13 +229,6 @@ public class JNATwain {
 			throw new JTwainException("Unable to display user interface: " + stat);
 		}
 
-		/*
-		 * dump(srcID); System.out.printf("ProtocolMajor: %02x%n",
-		 * srcID.ProtocolMajor); System.out.printf("ProtocolMinor: %02x%n",
-		 * srcID.ProtocolMinor); System.out.printf("SupportedGroups: %04x%n",
-		 * srcID.SupportedGroups);
-		 */
-		System.out.printf("Manufacturer: %s%n", new String(srcID.Manufacturer, 0, 34));
 		stat = CloseDSM(g_AppID, nativeHwnd);
 		if (stat != 0) {
 			jUser32.DestroyWindow(hWnd);
@@ -246,7 +243,7 @@ public class JNATwain {
 		int height = bmih.biHeight; // height < 0 if bitmap is top-down
 		if (height < 0)
 			height = -height;
-		// System.out.printf("w: %d, h: %d%n", width, height);
+		
 		int pixels[] = new int[width * height];
 		int numColors;
 		if (bmih.biClrUsed > 0)
@@ -257,8 +254,7 @@ public class JNATwain {
 											// (palette index)
 		// and the number of row bytes is a multiple of
 		// 4.
-		// System.out.printf("NumColors: %d, PadBytes: %d%n", numColors,
-		// padBytes);
+		
 		int rowBytes = width + padBytes;
 		byte bitmap[] = bmih.getPointer().getByteArray(bmih.size() + numColors * 4, height * rowBytes);
 		int palette[] = bmih.getPointer().getIntArray(bmih.size(), numColors);
@@ -267,8 +263,6 @@ public class JNATwain {
 				// Extract color information for pixel and build an equivalent
 				// Java pixel for storage in the Java-based integer array.
 				byte bitVal = bitmap[rowBytes * row + col];
-				// System.out.printf("%02x%s", bitVal, ((col % 16) == 0 && col
-				// != 0) ? "\n" : " ");
 				int pixel = 0xff000000 | palette[bitVal & 0xff];
 				// Store the pixel in the array at the appropriate index.
 				pixels[width * (height - row - 1) + col] = pixel;
@@ -283,7 +277,6 @@ public class JNATwain {
 		int height = bmih.biHeight; // height < 0 if bitmap is top-down
 		if (height < 0)
 			height = -height;
-		// System.out.printf("w: %d, h: %d%n", width, height);
 		int pixels[] = new int[width * height];
 		/*
 		 * int numColors; if (bmih.biClrUsed > 0) numColors = bmih.biClrUsed;
@@ -292,8 +285,6 @@ public class JNATwain {
 		// (palette index)
 		// and the number of row bytes is a multiple of
 		// 4.
-		// System.out.printf("NumColors: %d, PadBytes: %d%n", numColors,
-		// padBytes);
 		int rowBytes = 3 * width + padBytes;
 		byte bitmap[] = bmih.getPointer().getByteArray(bmih.size(), height * rowBytes);
 		// int palette[] = bmih.getPointer().getIntArray(bmih.size(),
@@ -302,8 +293,6 @@ public class JNATwain {
 			for (int col = 0; col < width; col++) {
 				// Obtain pixel index;
 				int index = rowBytes * row + col * 3;
-				// System.out.printf("%02x%s", bitVal, ((col % 16) == 0 && col
-				// != 0) ? "\n" : " ");
 				int pixel = 0xff000000 | (bitmap[index + 2] & 0xff) << 16 | (bitmap[index + 1] & 0xff) << 8
 						| (bitmap[index] & 0xff);
 				// Store the pixel in the array at the appropriate index.
@@ -314,7 +303,7 @@ public class JNATwain {
 		return Toolkit.getDefaultToolkit().createImage(mis);
 	}
 
-	/* Referencehttps://www.twain.org/wp-content/uploads/2016/03/twain1.h */
+	/* Reference https://www.twain.org/wp-content/uploads/2016/03/twain1.h */
 	private static void setupAppId(TW_IDENTITY appID) {
 		appID.Id = 0;
 		appID.ProtocolMajor = 2;
@@ -419,35 +408,6 @@ public class JNATwain {
 		return (stat == 0) ? status.ConditionCode : ((stat << 16) + status.ConditionCode);
 	}
 
-	@SuppressWarnings("unused")
-	private static void dump(Structure s) {
-		s.write();
-		int size = s.size();
-		System.out.printf("Structure: %s  Size: %d%n", s.getClass().getSimpleName(), size);
-		Pointer p = s.getPointer();
-		byte bb[] = p.getByteArray(0, size);
-		outer: for (int i = 0;; i += 16) {
-			System.out.printf("%03d: ", i);
-			for (int j = 0; j < 16; ++j) {
-				int k = i + j;
-				if (k >= size)
-					break;
-				System.out.printf(" %02x", bb[k]);
-			}
-			System.out.println();
-			System.out.printf("%03d: ", i);
-			for (int j = 0; j < 16; ++j) {
-				int k = i + j;
-				if (k >= size)
-					break outer;
-				byte b = bb[k];
-				System.out.printf("  %c", (b >= 32 && b < 127) ? b : '.');
-			}
-			System.out.println();
-		}
-		System.out.println();
-	}
-
 	private static HWND getTophwnd() {
 		HWND HWND_TOP = new HWND();
 		Pointer p = new Pointer(0);
@@ -456,15 +416,10 @@ public class JNATwain {
 	}
 
 	private static int getError() {
-		int rc = com.sun.jna.platform.win32.Kernel32.INSTANCE.GetLastError();
-
-		if (rc != 0)
-			System.out.println("error: " + rc);
-
-		return rc;
+		return com.sun.jna.platform.win32.Kernel32.INSTANCE.GetLastError();
 	}
 
-	public static Win32Twain twain = null;
+	private static Win32Twain twain = null;
 	private static Kernel32 kernel32 = null;
 	private static Image image = null;
 
