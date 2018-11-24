@@ -10,6 +10,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import javax.swing.SwingWorker;
 
 import net.javajeff.jtwain.ImageListener;
 import net.javajeff.jtwain.JNATwain;
@@ -67,33 +68,33 @@ public class JTwainDemo extends JFrame
                @Override
 			public void actionPerformed (ActionEvent e)
                {
-                  try
-                  {
-                      // Display the default source's configuration dialog box
-                      // to the user. Acquire one image (no matter how many
-                      // images are specified) if the dialog box's Scan button
-                      // is clicked.
-                	  ImageListener imageListener= new ScannerListener(); 
-                      Image im = JNATwain.acquire (true,imageListener);
+                   new SwingWorker<Image, Object>() {
+                       @Override
+                       protected Image doInBackground() throws Exception {
+                           ImageListener imageListener = new ScannerListener();
+                           return JNATwain.acquire(true, imageListener);
+                       }
 
-                      // Return if the dialog box's Cancel button was clicked.
+                       @Override
+                       protected void done() {
+                           super.done();
 
-                      if (im == null)
-                          return;
+                           try {
 
-                      // Update ImageArea panel with the new image, and adjust
-                      // the scrollbars.
+                               ia.setImage(get());
 
-                      ia.setImage (im);
+                               jsp.getHorizontalScrollBar().setValue(0);
+                               jsp.getVerticalScrollBar().setValue(0);
+                           } catch (Exception e2) {
+                               e2.printStackTrace();
+                               JOptionPane.showMessageDialog(JTwainDemo.this,
+                                       e2.getMessage());
+                           }
+                       }
 
-                      jsp.getHorizontalScrollBar ().setValue (0);
-                      jsp.getVerticalScrollBar ().setValue (0);
-                  }
-                  catch (JTwainException e2)
-                  {
-                      JOptionPane.showMessageDialog (JTwainDemo.this,
-                                                     e2.getMessage ());
-                  }
+
+               }.execute();
+                  
                }
            };
 
@@ -173,16 +174,6 @@ public class JTwainDemo extends JFrame
 
    public static void main (String [] args)
    {
-      // Initialize JTwain.
-     
-      if (!JNATwain.init (true))
-      {
-          System.out.println ("JTwainDemo: TWAIN not supported");
-          return;
-      }
-
-      // Construct the GUI and begin the event-handling thread.
-
       new JTwainDemo ("JTwain Demo");
    }
 }

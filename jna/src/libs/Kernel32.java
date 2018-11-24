@@ -1,29 +1,28 @@
 package libs;
 
+import com.sun.jna.FromNativeContext;
+import com.sun.jna.Native;
 import java.util.Arrays;
 import java.util.List;
 
-import com.sun.jna.Library;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.win32.W32APIOptions;
 
-public interface Kernel32 extends Library {
+public interface Kernel32 extends com.sun.jna.platform.win32.Kernel32 {
+        Kernel32 INSTANCE = Native.loadLibrary("kernel32", Kernel32.class, W32APIOptions.DEFAULT_OPTIONS);
+    
 	//http://msdn.microsoft.com/en-us/library/ms679277(VS.85).aspx
 	boolean Beep(int freq, int duration);
 	
 	int GetCurrentDirectoryA(int bufLen, byte buffer[]);
 	boolean SetCurrentDirectoryA(String dir);
-	
-	//http://msdn.microsoft.com/en-us/library/ms679360(VS.85).aspx
-	int GetLastError();
-	int GetCurrentProcess();
-	int GetCurrentProcessId();
-	int GetTickCount();
+
 	int LoadLibraryA(String lib);
-	Pointer GlobalLock(int hdl);
-	boolean GlobalUnlock(int hdl);
-	int GlobalFree(int hdl);
+	Pointer GlobalLock(HGLOBAL hdl);
+	boolean GlobalUnlock(HGLOBAL hdl);
+	int GlobalFree(HGLOBAL hdl);
 	int GetLogicalDrives();
 	int GetLogicalDriveStringsA(int bufLen, byte buf[]);
 	//http://msdn.microsoft.com/en-us/library/aa364993(VS.85).aspx
@@ -71,7 +70,7 @@ public interface Kernel32 extends Library {
 		}
 	}
 	
-	boolean GetProcessTimes(int processHdl, FILETIME creation, FILETIME exit, FILETIME kernel, FILETIME user);
+	boolean GetProcessTimes(HANDLE processHdl, FILETIME creation, FILETIME exit, FILETIME kernel, FILETIME user);
 	boolean GetSystemTimes(FILETIME idle, FILETIME kernel, FILETIME user);
 	
 	public static class SECURITY_ATTRIBUTES extends Structure {
@@ -123,4 +122,20 @@ public interface Kernel32 extends Library {
 
 	boolean GetDiskFreeSpaceA(String s, IntByReference r1, IntByReference r2, IntByReference r3, IntByReference r4);
 	boolean GetDiskFreeSpaceEx(String s, IntByReference r1, IntByReference r2, IntByReference r3);
+
+        public static class HGLOBAL extends HANDLE {
+
+                public HGLOBAL() {
+                }
+
+                public HGLOBAL(Pointer p) {
+                    super(p);
+                }
+
+                @Override
+                public Object fromNative(Object nativeValue, FromNativeContext context) {
+                    return new HGLOBAL((Pointer) nativeValue);
+                }
+
+        }
 }

@@ -1,6 +1,7 @@
 package democode;
 
 import com.sun.jna.Native;
+import com.sun.jna.platform.win32.WinNT.HANDLE;
 
 import libs.Kernel32;
 import libs.Kernel32.FILETIME;
@@ -15,7 +16,7 @@ public class GetProcessTimes {
 	public static void main(String[] args) throws InterruptedException {
 		Kernel32 kernel32 = (Kernel32) 
 				Native.loadLibrary("kernel32", Kernel32.class);
-		int procHdl = kernel32.GetCurrentProcess();
+		HANDLE procHdl = kernel32.GetCurrentProcess();
 		FILETIME creationTime = new FILETIME();
 		FILETIME exitTime = new FILETIME();
 		FILETIME kernel = new FILETIME();

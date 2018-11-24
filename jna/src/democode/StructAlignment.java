@@ -26,11 +26,8 @@ public class StructAlignment {
 	}
 
 	public static void main(String[] args) {
-		TW_IDENTITY s1 = new TW_IDENTITY(Structure.ALIGN_NONE);
+		TW_IDENTITY s1 = new TW_IDENTITY();
 		tag(s1);
 		dump(s1);
-		TW_IDENTITY s2 = new TW_IDENTITY(Structure.ALIGN_DEFAULT);
-		tag(s2);
-		dump(s2);
 	}
 }
